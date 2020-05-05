@@ -112,8 +112,8 @@ def many_person_empower(myurl, headers):
 
 
 if __name__ == '__main__':
-    seq_no = 'SN1373529'
-    guids = 'ec368c226c98b42fef1e47cef3d89714'
+    seq_no = 'SN1376838'
+    guids = '6466661a09bed17fefc97819c43ded8a'
     r1 = auth_person(seq_no, guids)
     print(r1)
     r2 = cancle_auth_person(seq_no, guids, app_auth())

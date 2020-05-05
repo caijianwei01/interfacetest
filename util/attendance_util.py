@@ -18,7 +18,7 @@ class AttendanceUtil(object):
         """
         timestamp = str(int(time.time()))
         app_secret, app_key = "47F9B660196F0F23B55908786E8A327B", "E1B559D014E90F7EF8047949A7440F3E"
-        md5_val = hashlib.md5((app_key + str(timestamp) + app_secret).lower().encode('utf-8')).hexdigest()
+        md5_val = hashlib.md5((app_key + str(timestamp) + app_secret).lower().encode("utf-8")).hexdigest()
         return md5_val
 
     def app_auth(self):
@@ -27,13 +27,15 @@ class AttendanceUtil(object):
         :return:
         """
         data = {
-            'app_id': '15676497800668552d',
-            'app_key': 'E1B559D014E90F7EF8047949A7440F3E',
-            'timestamp': str(int(time.time())),
-            'sign': self.calc_sign()
+            "app_id": "15676497800668552d",
+            "app_key": "E1B559D014E90F7EF8047949A7440F3E",
+            "timestamp": str(int(time.time())),
+            "sign": self.calc_sign()
         }
-        # rs = requests.post(const.AUTH, data=json.dumps(data))
-        rs = self.run_method.run_main("post", const.AUTH, json.dumps(data))
+        headers = {
+            "Content-Type": "application/json"
+        }
+        rs = self.run_method.run_main("post", const.AUTH, json_data=data, headers=headers)
         return json.loads(rs)['data']
 
 
