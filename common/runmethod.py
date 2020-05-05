@@ -18,11 +18,12 @@ class RunMethod(object):
 
     def get_main(self, url, data=None, headers=None):
         """
-        verify=false表示忽略对SSL证书的验证
+        verify=false：表示忽略对SSL证书的验证
+        ensure_ascii=False：中文默认不使用不使用ascii编码
         :param url:
         :param data:
         :param headers:
-        :return:
+        :return:返回结果为json格式
         """
         if headers is not None:
             result = requests.get(url=url, data=data, headers=headers, verify=False)

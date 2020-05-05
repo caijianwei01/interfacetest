@@ -34,7 +34,7 @@ class AttendanceUtil(object):
         }
         # rs = requests.post(const.AUTH, data=json.dumps(data))
         rs = self.run_method.run_main("post", const.AUTH, json.dumps(data))
-        print(rs)
+        return json.loads(rs)['data']
 
 
 if __name__ == '__main__':
