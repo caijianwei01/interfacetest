@@ -4,6 +4,7 @@ import requests
 import json
 import time
 import hashlib
+import util.mysql_util as mu
 
 
 def get_pic():
@@ -55,7 +56,7 @@ def app_auth():
     return rs.json()['data']
 
 
-def auth_person(seq_no, guids):
+def auth_person(seq_no, guids, headers=None):
     """
     设备授权人员
     :param seq_no:
@@ -67,7 +68,7 @@ def auth_person(seq_no, guids):
         "seq_no": seq_no,
         "guids": guids
     }
-    rs = requests.post(url, data=json.dumps(payload))
+    rs = requests.post(url, data=json.dumps(payload), headers=headers)
     return json.loads(rs.text)
 
 
@@ -112,9 +113,18 @@ def many_person_empower(myurl, headers):
 
 
 if __name__ == '__main__':
-    seq_no = 'SN1376838'
-    guids = '6466661a09bed17fefc97819c43ded8a'
-    r1 = auth_person(seq_no, guids)
+    db = mu.MysqlUtil('127.0.0.1', 3306, 'root', '123456', 'school')
+    sql1 = "select USER_NAME, GUID from school_student where SCHOOL_ID='c42be09025eb851943bf77378b034d62' and AUTH_PIC_URL is not null limit 10;"
+    rs1 = db.query(sql1)
+    guids = []
+    for rs in rs1:
+        guids.append(rs[1])
+    guids_str = ','.join(guids)
+    print(guids_str)
+    seq_no = '5L03R090145'
+    guids_1 = guids_str
+    headers = {
+        "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJleHAiOjE1ODkzMzUwMTUsImlhdCI6MTU4OTI0ODYxNSwiZGF0YSI6eyJ0b2tlbl9uYW1lIjoiYXBwX3Rva2VuIiwiaWQiOjUsInVzZXJuYW1lIjoiYXBwX2lkIiwicm9sZSI6IiJ9fQ.B2WnsHkMsp9hNTw19mqS66EkQ-pwUsvJS4TSq1vSNLQ"
+    }
+    r1 = auth_person(seq_no, guids_1, headers)
     print(r1)
-    r2 = cancle_auth_person(seq_no, guids, app_auth())
-    print(r2)

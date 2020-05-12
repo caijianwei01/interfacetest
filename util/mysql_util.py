@@ -45,10 +45,15 @@ class MysqlUtil:
 
 
 if __name__ == '__main__':
-    db = MysqlUtil('127.0.0.1', 3306, 'root', '123456', 'interfacetest')
-    sql1 = 'select * from user'
+    db = MysqlUtil('127.0.0.1', 3306, 'root', '123456', 'school')
+    sql1 = "select USER_NAME, GUID from school_student where SCHOOL_ID='c42be09025eb851943bf77378b034d62' and AUTH_PIC_URL is not null limit 10;"
     rs1 = db.query(sql1)
+    guids = []
+    print(len(rs1))
     for rs in rs1:
-        print(rs)
+        guids.append(rs[1])
+    print(guids)
+    guids_str = ','.join(guids)
+    print(type(guids_str))
     # sql2 = 'insert into user values ("小明",17,"男")'
     # db.execute(sql2)
