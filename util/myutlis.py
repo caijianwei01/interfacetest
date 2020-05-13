@@ -3,6 +3,8 @@
 """常用工具类"""
 
 import random
+import os
+from PIL import Image
 import util.util_const as ut
 
 
@@ -39,8 +41,7 @@ def create_name(name_nums=1):
     :param name_nums: 生成姓名数
     :return:
     """
-    if int(name_nums) != 1:
-        names = []
+    names = []
     for i in range(int(name_nums)):
         x = random.randint(0, len(ut.SURNAME) - 1)
         m1 = random.randint(0, len(ut.NAME) - 1)
@@ -59,6 +60,28 @@ def create_name(name_nums=1):
         elif name_num == 2:
             names.append(f"{ut.SURNAME[x]}{ut.NAME[m1]}{ut.NAME[m2]}")
     return names
+
+
+def reduct_image_by_width(width: int = 600, img_path: str = "../img/"):
+    """
+    图片压缩
+    :param width:
+    :param img_path:
+    :return:
+    """
+    all_image = os.listdir(img_path)
+    for image in all_image:
+        file = img_path + image
+        img = Image.open(file)
+        w, h = img.size
+        new_height = round(width / w * h)
+        img = img.resize((width, new_height), Image.ANTIALIAS)
+        if "." in image:
+            filename = image.split(".")[0]
+        else:
+            filename = image
+        filename = filename + "_update" + ".jpg"
+        img.save(img_path + filename, optimize=True, quality=95)
 
 
 if __name__ == '__main__':

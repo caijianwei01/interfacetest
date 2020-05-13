@@ -1,9 +1,12 @@
 #!/usr/bin/env python
 # -*- coding:utf-8 -*-
-import requests
+import hashlib
 import json
 import time
-import hashlib
+
+import requests
+
+import common.atten_const as at
 import util.mysql_util as mu
 
 
@@ -45,7 +48,7 @@ def app_auth():
     获取设备销权token
     :return:
     """
-    url = 'http://attendance.yooticloud.cn/api/v1/app/auth'
+    url = at.AUTH
     data = {
         'app_id': '15676497800668552d',
         'app_key': 'E1B559D014E90F7EF8047949A7440F3E',
@@ -63,13 +66,17 @@ def auth_person(seq_no, guids, headers=None):
     :param guids:
     :return: {'code': 1, 'data': None, 'msg': True},code=1授权成功
     """
-    url = 'http://attendance.yooticloud.cn/api/v1/provider/device/auth_person'
+    url = at.AUTH_PERSON
     payload = {
         "seq_no": seq_no,
         "guids": guids
     }
-    rs = requests.post(url, data=json.dumps(payload), headers=headers)
-    return json.loads(rs.text)
+    rs = requests.post(url, data=json.dumps(payload), headers=headers, timeout=None)
+    try:
+        return rs.json()
+    except Exception as e:
+        print(e)
+        return json.dumps({"code": -1, "msg": f"错误异常：{str(e)}", "data1": "", "data": ""})
 
 
 def cancle_auth_person(seq_no, guids, token):
@@ -79,7 +86,7 @@ def cancle_auth_person(seq_no, guids, token):
     :param token:销权token
     :return:{'code': 1, 'data': None, 'msg': True}，code=1销权成功
     """
-    url = 'http://attendance.yooticloud.cn/api/v1/provider/device/cancel_auth_person'
+    url = at.CANCEL_AUTH_PERSON
     headers = {
         'token': token
     }
@@ -114,17 +121,24 @@ def many_person_empower(myurl, headers):
 
 if __name__ == '__main__':
     db = mu.MysqlUtil('127.0.0.1', 3306, 'root', '123456', 'school')
-    sql1 = "select USER_NAME, GUID from school_student where SCHOOL_ID='c42be09025eb851943bf77378b034d62' and AUTH_PIC_URL is not null limit 10;"
+    sql1 = "select USER_NAME, GUID from school_student where SCHOOL_ID='c42be09025eb851943bf77378b034d62' and AUTH_PIC_URL is not null;"
     rs1 = db.query(sql1)
     guids = []
     for rs in rs1:
         guids.append(rs[1])
     guids_str = ','.join(guids)
-    print(guids_str)
-    seq_no = '5L03R090145'
+    seq_no = '5C04R080151'
     guids_1 = guids_str
     headers = {
-        "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJleHAiOjE1ODkzMzUwMTUsImlhdCI6MTU4OTI0ODYxNSwiZGF0YSI6eyJ0b2tlbl9uYW1lIjoiYXBwX3Rva2VuIiwiaWQiOjUsInVzZXJuYW1lIjoiYXBwX2lkIiwicm9sZSI6IiJ9fQ.B2WnsHkMsp9hNTw19mqS66EkQ-pwUsvJS4TSq1vSNLQ"
+        "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJleHAiOjE1ODk0Mjc1NTcsImlhdCI6MTU4OTM0MTE1NywiZGF0YSI6eyJ0b2tlbl9uYW1lIjoiYXBwX3Rva2VuIiwiaWQiOjUsInVzZXJuYW1lIjoiYXBwX2lkIiwicm9sZSI6IiJ9fQ.rou4tANbICgay7SvuYCXcgowJusEy-Sr0dBYJF9yBzw"
     }
+    persons = len(guids)
+    print(f"开始授权，授权人数{persons}人......")
+    start = time.time()
     r1 = auth_person(seq_no, guids_1, headers)
-    print(r1)
+    end = time.time()
+    times = (end - start) / 60
+    print(f"耗时时间{times}分钟")
+    print("授权失败人员................")
+    for person in r1.get('data1'):
+        print(person.get('msg'))
