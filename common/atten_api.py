@@ -3,14 +3,12 @@
 import hashlib
 import json
 import time
-
 import requests
-
 import common.atten_const as at
 import util.mysql_util as mu
 
 
-def get_pic():
+def get_person_pic():
     headers = {
         'token': 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJleHAiOjE1ODc4ODE4NDIsImlhdCI6MTU4Nzc5NTQ0MiwiZGF0YSI6eyJ0b2tlbl9uYW1lIjoidXNlcl90b2tlbiIsImlkIjoyMCwidXNlcm5hbWUiOiJhaV9zY2hvb2wiLCJyb2xlIjoibm9ybWFsIn19.1p1m2qmGkgt_aGMaBfvzine85LQ1UlZpTxiLeHag6JI'}
     for i in range(59, 451):
@@ -59,7 +57,7 @@ def app_auth():
     return rs.json()['data']
 
 
-def auth_person(seq_no, guids, headers=None):
+def auth_person(seq_no, guids, token):
     """
     设备授权人员
     :param seq_no:
@@ -71,12 +69,47 @@ def auth_person(seq_no, guids, headers=None):
         "seq_no": seq_no,
         "guids": guids
     }
-    rs = requests.post(url, data=json.dumps(payload), headers=headers, timeout=None)
+    rs = requests.post(url, data=json.dumps(payload), headers={'token': token}, timeout=None)
     try:
         return rs.json()
     except Exception as e:
         print(e)
         return json.dumps({"code": -1, "msg": f"错误异常：{str(e)}", "data1": "", "data": ""})
+
+
+def auths_persons(seq_no, token, school_id, limit=None):
+    """
+    一台设备批量授权人员
+    :param seq_nos:
+    :param guids:
+    :param token:
+    :param school_id:
+    :param limit:
+    :return:
+    """
+    # 获取学校人员guids
+    db = mu.MysqlUtil('127.0.0.1', 3306, 'root', '123456', 'school')
+    if limit:
+        sql = "select USER_NAME, GUID from school_student " \
+              "where SCHOOL_ID={} and AUTH_PIC_URL is not null limit {};".format(str(school_id), int(limit))
+    else:
+        sql = f"select USER_NAME, GUID from school_student " \
+              "where SCHOOL_ID={} and AUTH_PIC_URL is not null;".format(str(school_id))
+    persons = db.query(sql)
+    guids = []
+    for person in persons:
+        guids.append(person[1])
+    guids_str = ','.join(guids)
+    print(f'开始授权，授权人数{len(guids)}...')
+    start = time.time()
+    result = auth_person(seq_no, guids_str, token)
+    end = time.time()
+    # 耗费时间
+    times = (end - start) / 60
+    print(f"耗时{times}分钟")
+    print(f"{seq_no} --> 授权失败人员：")
+    for rs in result.get('data1'):
+        print(rs.get('msg'))
 
 
 def cancle_auth_person(seq_no, guids, token):
@@ -121,7 +154,8 @@ def many_person_empower(myurl, headers):
 
 if __name__ == '__main__':
     db = mu.MysqlUtil('127.0.0.1', 3306, 'root', '123456', 'school')
-    sql1 = "select USER_NAME, GUID from school_student where SCHOOL_ID='c42be09025eb851943bf77378b034d62' and AUTH_PIC_URL is not null;"
+    sql1 = "select USER_NAME, GUID from school_student " \
+           "where SCHOOL_ID='c42be09025eb851943bf77378b034d62' and AUTH_PIC_URL is not null;"
     rs1 = db.query(sql1)
     guids = []
     for rs in rs1:
@@ -129,13 +163,11 @@ if __name__ == '__main__':
     guids_str = ','.join(guids)
     seq_no = '5C04R080151'
     guids_1 = guids_str
-    headers = {
-        "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJleHAiOjE1ODk0Mjc1NTcsImlhdCI6MTU4OTM0MTE1NywiZGF0YSI6eyJ0b2tlbl9uYW1lIjoiYXBwX3Rva2VuIiwiaWQiOjUsInVzZXJuYW1lIjoiYXBwX2lkIiwicm9sZSI6IiJ9fQ.rou4tANbICgay7SvuYCXcgowJusEy-Sr0dBYJF9yBzw"
-    }
+    token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJleHAiOjE1ODk0Mjc1NTcsImlhdCI6MTU4OTM0MTE1NywiZGF0YSI6eyJ0b2tlbl9uYW1lIjoiYXBwX3Rva2VuIiwiaWQiOjUsInVzZXJuYW1lIjoiYXBwX2lkIiwicm9sZSI6IiJ9fQ.rou4tANbICgay7SvuYCXcgowJusEy-Sr0dBYJF9yBzw"
     persons = len(guids)
-    print(f"开始授权，授权人数{persons}人......")
+    print(f"开始授权，授权人数{len(persons)}人......")
     start = time.time()
-    r1 = auth_person(seq_no, guids_1, headers)
+    r1 = auth_person(seq_no, guids_1, token)
     end = time.time()
     times = (end - start) / 60
     print(f"耗时时间{times}分钟")

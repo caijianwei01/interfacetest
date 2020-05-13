@@ -5,6 +5,8 @@
 import random
 import os
 from PIL import Image
+from datetime import date
+from datetime import timedelta
 import util.util_const as ut
 
 
@@ -14,8 +16,7 @@ def create_phone(phone_nums=1):
     :param phone_nums: 生成手机号数
     :return:
     """
-    if int(phone_nums) != 1:
-        phones = []
+    phones = []
     for i in range(int(phone_nums)):
         # 第二位数字
         second = [3, 4, 5, 7, 8][random.randint(0, 4)]
@@ -62,6 +63,49 @@ def create_name(name_nums=1):
     return names
 
 
+def _getdistrictcode():
+    """
+    读取区号文件数据
+    :return:
+    """
+    code_list = []
+    with open('../data/districtcode.txt', encoding='utf-8') as f:
+        lines = f.readlines()
+    for line in lines:
+        # 获取辖区的区号
+        if line.strip() and line[:6][-2:] != '00':
+            code_list.append(line[:6])
+    return code_list
+
+
+def create_id_card(card_nums=1):
+    """
+    自动生成身份证，默认返回一个身份证，多个以列表的形式返回
+    :param card_nums: 生成身份证数
+    :return:
+    """
+    id_cards = []
+    for num in range(int(card_nums)):
+        code_list = _getdistrictcode()
+        id_card = code_list[random.randint(0, len(code_list) - 1)]  # 地区项
+        id_card = id_card + str(random.randint(1950, 2000))  # 年份项
+        day = date.today() + timedelta(days=random.randint(1, 366))  # 月份和日期项
+        id_card = id_card + day.strftime('%m%d')
+        id_card = id_card + str(random.randint(100, 300))  # 顺序号简单处理
+        count = 0
+        weight = [7, 9, 10, 5, 8, 4, 2, 1, 6, 3, 7, 9, 10, 5, 8, 4, 2]  # 权重项
+        check_code = {'0': '1', '1': '0', '2': 'X', '3': '9', '4': '8', '5': '7', '6': '6', '7': '5', '8': '5',
+                      '9': '3',
+                      '10': '2'}  # 校验码映射
+        for i in range(0, len(id_card)):
+            count = count + int(id_card[i]) * weight[i]
+        id_card = id_card + check_code[str(count % 11)]  # 算出校验码
+        if int(card_nums) == 1:
+            return id_card
+        id_cards.append(id_card)
+    return id_cards
+
+
 def reduct_image_by_width(width: int = 600, img_path: str = "../img/"):
     """
     图片压缩
@@ -85,4 +129,4 @@ def reduct_image_by_width(width: int = 600, img_path: str = "../img/"):
 
 
 if __name__ == '__main__':
-    print(create_name(100))
+    print(create_id_card(10))
