@@ -91,10 +91,10 @@ def auths_persons(seq_no, token, school_id, limit=None):
     db = mu.MysqlUtil('127.0.0.1', 3306, 'root', '123456', 'school')
     if limit:
         sql = "select USER_NAME, GUID from school_student " \
-              "where SCHOOL_ID={} and AUTH_PIC_URL is not null limit {};".format(str(school_id), int(limit))
+              "where SCHOOL_ID='{}' and AUTH_PIC_URL is not null limit {};".format(str(school_id), int(limit))
     else:
         sql = f"select USER_NAME, GUID from school_student " \
-              "where SCHOOL_ID={} and AUTH_PIC_URL is not null;".format(str(school_id))
+            "where SCHOOL_ID='{}' and AUTH_PIC_URL is not null;".format(str(school_id))
     persons = db.query(sql)
     guids = []
     for person in persons:
@@ -108,8 +108,37 @@ def auths_persons(seq_no, token, school_id, limit=None):
     times = (end - start) / 60
     print(f"耗时{times}分钟")
     print(f"{seq_no} --> 授权失败人员：")
-    for rs in result.get('data1'):
-        print(rs.get('msg'))
+    if isinstance(result, dict):
+        for rs in result.get('data1'):
+            if rs:
+                print(rs.get('msg'))
+    else:
+        print(result)
+    print('------------------------------------------------')
+
+
+def query_user_info():
+    persons = []
+    with open('../data/刘美小学.txt') as f:
+        guids = f.readlines()
+    for guid in guids:
+        rs = requests.get(at.QUERY_USER_INFO, params={'guid': guid.strip()})
+        persons.append(rs.json().get('data'))
+    for p in persons:
+        if p:
+            url = p.get('url')
+            if url:
+                try:
+                    # rs = requests.get(url)
+                    # with open('C:/Users/admin/Desktop/刘美异常照片/%s.jpg' % p.get('name'), 'wb') as f:
+                    #     f.write(rs.content)
+                    print(f"{p.get('name')}--{p.get('guid')}")
+                except Exception as e:
+                    print(f"{p.get('name')}图片路径异常：{e}")
+            else:
+                print(f"{p.get('name')}--{p.get('guid')}:图片路径为空")
+        else:
+            print(f"查询学生guid失败-->{p}")
 
 
 def cancle_auth_person(seq_no, guids, token):
@@ -153,24 +182,10 @@ def many_person_empower(myurl, headers):
 
 
 if __name__ == '__main__':
-    db = mu.MysqlUtil('127.0.0.1', 3306, 'root', '123456', 'school')
-    sql1 = "select USER_NAME, GUID from school_student " \
-           "where SCHOOL_ID='c42be09025eb851943bf77378b034d62' and AUTH_PIC_URL is not null;"
-    rs1 = db.query(sql1)
-    guids = []
-    for rs in rs1:
-        guids.append(rs[1])
-    guids_str = ','.join(guids)
-    seq_no = '5C04R080151'
-    guids_1 = guids_str
-    token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJleHAiOjE1ODk0Mjc1NTcsImlhdCI6MTU4OTM0MTE1NywiZGF0YSI6eyJ0b2tlbl9uYW1lIjoiYXBwX3Rva2VuIiwiaWQiOjUsInVzZXJuYW1lIjoiYXBwX2lkIiwicm9sZSI6IiJ9fQ.rou4tANbICgay7SvuYCXcgowJusEy-Sr0dBYJF9yBzw"
-    persons = len(guids)
-    print(f"开始授权，授权人数{len(persons)}人......")
-    start = time.time()
-    r1 = auth_person(seq_no, guids_1, token)
-    end = time.time()
-    times = (end - start) / 60
-    print(f"耗时时间{times}分钟")
-    print("授权失败人员................")
-    for person in r1.get('data1'):
-        print(person.get('msg'))
+    seq_list = ['5C04R080151', '5L03R090145']
+    token = app_auth()
+    school_id = 'c42be09025eb851943bf77378b034d62'
+    for seq in seq_list:
+        auths_persons(seq, token, school_id, 5)
+        time.sleep(4320)
+
