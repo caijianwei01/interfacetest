@@ -7,6 +7,9 @@ import requests
 import common.atten_const as at
 import util.mysql_util as mu
 
+# 数据库连接
+db = mu.MysqlUtil('127.0.0.1', 3306, 'root', '123456', 'school')
+
 
 def get_person_pic():
     headers = {
@@ -88,13 +91,12 @@ def auths_persons(seq_no, token, school_id, limit=None):
     :return:
     """
     # 获取学校人员guids
-    db = mu.MysqlUtil('127.0.0.1', 3306, 'root', '123456', 'school')
     if limit:
         sql = "select USER_NAME, GUID from school_student " \
               "where SCHOOL_ID='{}' and AUTH_PIC_URL is not null limit {};".format(str(school_id), int(limit))
     else:
         sql = f"select USER_NAME, GUID from school_student " \
-            "where SCHOOL_ID='{}' and AUTH_PIC_URL is not null;".format(str(school_id))
+              "where SCHOOL_ID='{}' and AUTH_PIC_URL is not null;".format(str(school_id))
     persons = db.query(sql)
     guids = []
     for person in persons:
@@ -160,32 +162,10 @@ def cancle_auth_person(seq_no, guids, token):
     return json.loads(rs.text)
 
 
-def many_person_empower(myurl, headers):
-    for i in range(1, 2):
-        url1 = f'http://attendance.yooticloud.cn/api/v1/provider/user?pageNo={i}&pageSize=30&source=web'
-        r = requests.get(url1, headers=headers)
-        for person in r.json()['data']:
-            pic_url = person['url']
-            guid = person['guid']
-            guid_len = len(guid)
-            if pic_url:
-                try:
-                    code = auth_person(myurl, headers, guid)
-                    if code == 1:
-                        print(f"{person['name']}授权成功:{guid}-{guid_len}")
-                    else:
-                        print(f"{person['name']}授权失败:{guid}-{guid_len}")
-                    time.sleep(1)
-                except Exception as e:
-                    print(f'{person["name"]}学生图片路径异常')
-                    print(e)
-
-
 if __name__ == '__main__':
     seq_list = ['5C04R080151', '5L03R090145']
     token = app_auth()
     school_id = 'c42be09025eb851943bf77378b034d62'
     for seq in seq_list:
         auths_persons(seq, token, school_id, 5)
-        time.sleep(4320)
-
+        time.sleep(5)

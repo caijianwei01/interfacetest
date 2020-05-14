@@ -4,6 +4,8 @@
 
 import random
 import os
+import time
+from datetime import datetime
 from PIL import Image
 from datetime import date
 from datetime import timedelta
@@ -128,5 +130,33 @@ def reduct_image_by_width(width: int = 600, img_path: str = "../img/"):
         img.save(img_path + filename, optimize=True, quality=95)
 
 
+def get_current_datetime(get_date=True, get_time=True, date_separator='-', time_separator=':', datetime_separator=' '):
+    """
+    获取当前的日期时间
+    :param get_date: 是否获取日期
+    :param get_time: 是否获取时间
+    :param date_separator: 日期分隔符，默认'-'
+    :param time_separator: 时间分隔符，默认':'
+    :return:
+    """
+    current_date = ''
+    now_time = ''
+    # 获取日期
+    if get_date:
+        time_tup = time.localtime()
+        current_date = str(time_tup.tm_year) + f'{date_separator}' + str(time_tup.tm_mon) + f'{date_separator}' + str(
+            time_tup.tm_mday)
+    # 获取时间
+    if get_time:
+        date_time = datetime.now()
+        now_time = date_time.strftime(f'%H{time_separator}%M{time_separator}%S')
+    if get_date and get_time:
+        return current_date + datetime_separator + now_time
+    elif get_date:
+        return current_date
+    elif get_time:
+        return now_time
+
+
 if __name__ == '__main__':
-    print(create_id_card(10))
+    print(get_current_datetime())
