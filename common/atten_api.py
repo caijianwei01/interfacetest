@@ -7,9 +7,6 @@ import requests
 import common.atten_const as at
 import util.mysql_util as mu
 
-# 数据库连接
-db = mu.MysqlUtil('127.0.0.1', 3306, 'root', '123456', 'school')
-
 
 def get_person_pic():
     headers = {
@@ -76,8 +73,7 @@ def auth_person(seq_no, guids, token):
     try:
         return rs.json()
     except Exception as e:
-        print(e)
-        return json.dumps({"code": -1, "msg": f"错误异常：{str(e)}", "data1": "", "data": ""})
+        return {"code": -1, "msg": str(e), "data1": "", "data": ""}
 
 
 def auths_persons(seq_no, token, school_id, limit=None):
@@ -90,32 +86,34 @@ def auths_persons(seq_no, token, school_id, limit=None):
     :param limit:
     :return:
     """
+    # 数据库连接
+    db = mu.MysqlUtil('127.0.0.1', 3306, 'root', '123456', 'school')
     # 获取学校人员guids
     if limit:
         sql = "select USER_NAME, GUID from school_student " \
               "where SCHOOL_ID='{}' and AUTH_PIC_URL is not null limit {};".format(str(school_id), int(limit))
     else:
         sql = f"select USER_NAME, GUID from school_student " \
-              "where SCHOOL_ID='{}' and AUTH_PIC_URL is not null;".format(str(school_id))
+            "where SCHOOL_ID='{}' and AUTH_PIC_URL is not null;".format(str(school_id))
     persons = db.query(sql)
     guids = []
     for person in persons:
         guids.append(person[1])
     guids_str = ','.join(guids)
-    print(f'开始授权，授权人数{len(guids)}...')
+    print(f'{seq_no}开始授权，授权人数{len(guids)}...')
     start = time.time()
     result = auth_person(seq_no, guids_str, token)
     end = time.time()
+    print(result)
     # 耗费时间
     times = (end - start) / 60
-    print(f"耗时{times}分钟")
-    print(f"{seq_no} --> 授权失败人员：")
+    print(f"{seq_no}耗时{times}分钟")
     if isinstance(result, dict):
-        for rs in result.get('data1'):
-            if rs:
-                print(rs.get('msg'))
-    else:
-        print(result)
+        if result.get('data1'):
+            print(f"{seq_no} --> 授权失败人员：")
+            for rs in result.get('data1'):
+                if rs:
+                    print(rs.get('msg'))
     print('------------------------------------------------')
 
 
@@ -163,9 +161,15 @@ def cancle_auth_person(seq_no, guids, token):
 
 
 if __name__ == '__main__':
-    seq_list = ['5C04R080151', '5L03R090145']
+    from multiprocessing.pool import ThreadPool
+
+    seq_list = ['5C04R080151', '5C04R080107']
+    pool = ThreadPool(4)
     token = app_auth()
     school_id = 'c42be09025eb851943bf77378b034d62'
-    for seq in seq_list:
-        auths_persons(seq, token, school_id, 5)
-        time.sleep(5)
+    # for seq in seq_list:
+    #     pool.apply_async(auths_persons, args=(seq, token, school_id, 10))
+    #     time.sleep(2)
+    # pool.close()
+    # pool.join()
+    auths_persons('5C04R080151', token, school_id, 50)

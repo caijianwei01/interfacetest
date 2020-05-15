@@ -159,4 +159,4 @@ def get_current_datetime(get_date=True, get_time=True, date_separator='-', time_
 
 
 if __name__ == '__main__':
-    print(get_current_datetime())
+    reduct_image_by_width(width=480)
