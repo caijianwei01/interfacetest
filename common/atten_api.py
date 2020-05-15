@@ -69,7 +69,11 @@ def auth_person(seq_no, guids, token):
         "seq_no": seq_no,
         "guids": guids
     }
+    start = time.time()
     rs = requests.post(url, data=json.dumps(payload), headers={'token': token}, timeout=None)
+    end = time.time()
+    times = (end - start) / 60
+    print(f"{seq_no}耗费时间{times}分钟")
     try:
         return rs.json()
     except Exception as e:
@@ -101,13 +105,7 @@ def auths_persons(seq_no, token, school_id, limit=None):
         guids.append(person[1])
     guids_str = ','.join(guids)
     print(f'{seq_no}开始授权，授权人数{len(guids)}...')
-    start = time.time()
     result = auth_person(seq_no, guids_str, token)
-    end = time.time()
-    print(result)
-    # 耗费时间
-    times = (end - start) / 60
-    print(f"{seq_no}耗时{times}分钟")
     if isinstance(result, dict):
         if result.get('data1'):
             print(f"{seq_no} --> 授权失败人员：")
@@ -163,13 +161,12 @@ def cancle_auth_person(seq_no, guids, token):
 if __name__ == '__main__':
     from multiprocessing.pool import ThreadPool
 
-    seq_list = ['5C04R080151', '5C04R080107']
-    pool = ThreadPool(4)
+    seq_list = ['5C04R080151']
+    pool = ThreadPool(len(seq_list))
     token = app_auth()
     school_id = 'c42be09025eb851943bf77378b034d62'
-    # for seq in seq_list:
-    #     pool.apply_async(auths_persons, args=(seq, token, school_id, 10))
-    #     time.sleep(2)
-    # pool.close()
-    # pool.join()
-    auths_persons('5C04R080151', token, school_id, 50)
+    for seq in seq_list:
+        pool.apply_async(auths_persons, args=(seq, token, school_id, 20))
+        time.sleep(2)
+    pool.close()
+    pool.join()
