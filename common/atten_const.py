@@ -3,7 +3,7 @@
 """
 考勤平台常量
 """
-URL = "http://attendance.yooticloud.yt/api/v1/"
+URL = "http://attendance.yooticloud.cn/api/v1/"
 # URL = "http://192.168.0.92:8080/"
 
 # 设备授权人员

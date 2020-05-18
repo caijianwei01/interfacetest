@@ -6,6 +6,10 @@ import time
 import requests
 import common.atten_const as at
 import util.mysql_util as mu
+from util.log import Log
+
+# 日志打印
+my_log = Log()
 
 
 def get_person_pic():
@@ -70,10 +74,11 @@ def auth_person(seq_no, guids, token):
         "guids": guids
     }
     start = time.time()
-    rs = requests.post(url, data=json.dumps(payload), headers={'token': token}, timeout=None)
+    rs = requests.post(url, data=json.dumps(payload), headers={'token': token}, timeout=(10, 3600))
     end = time.time()
     times = (end - start) / 60
-    print(f"{seq_no}耗费时间{times}分钟")
+    times = round(times, 2)
+    my_log.info(f"{seq_no}耗费时间{times}分钟")
     try:
         return rs.json()
     except Exception as e:
@@ -98,21 +103,21 @@ def auths_persons(seq_no, token, school_id, limit=None):
               "where SCHOOL_ID='{}' and AUTH_PIC_URL is not null limit {};".format(str(school_id), int(limit))
     else:
         sql = f"select USER_NAME, GUID from school_student " \
-            "where SCHOOL_ID='{}' and AUTH_PIC_URL is not null;".format(str(school_id))
+              "where SCHOOL_ID='{}' and AUTH_PIC_URL is not null;".format(str(school_id))
     persons = db.query(sql)
     guids = []
     for person in persons:
         guids.append(person[1])
     guids_str = ','.join(guids)
-    print(f'{seq_no}开始授权，授权人数{len(guids)}...')
+    my_log.info(f'{seq_no}开始授权，授权人数{len(guids)}...')
     result = auth_person(seq_no, guids_str, token)
     if isinstance(result, dict):
         if result.get('data1'):
-            print(f"{seq_no} --> 授权失败人员：")
+            my_log.info(f"{seq_no} --> 授权失败人员：")
             for rs in result.get('data1'):
                 if rs:
-                    print(rs.get('msg'))
-    print('------------------------------------------------')
+                    my_log.info(rs.get('msg'))
+                    my_log.info('------------------------------------------------')
 
 
 def query_user_info():
@@ -127,16 +132,15 @@ def query_user_info():
             url = p.get('url')
             if url:
                 try:
-                    # rs = requests.get(url)
-                    # with open('C:/Users/admin/Desktop/刘美异常照片/%s.jpg' % p.get('name'), 'wb') as f:
-                    #     f.write(rs.content)
-                    print(f"{p.get('name')}--{p.get('guid')}")
+                    rs = requests.get(url)
+                    with open('C:/Users/admin/Desktop/刘美异常照片/%s.jpg' % p.get('name'), 'wb') as f:
+                        f.write(rs.content)
                 except Exception as e:
-                    print(f"{p.get('name')}图片路径异常：{e}")
+                    my_log.info(f"{p.get('name')}图片路径异常：{e}")
             else:
-                print(f"{p.get('name')}--{p.get('guid')}:图片路径为空")
+                my_log.info(f"{p.get('name')}--{p.get('guid')}:图片路径为空")
         else:
-            print(f"查询学生guid失败-->{p}")
+            my_log.info(f"查询学生guid失败-->{p}")
 
 
 def cancle_auth_person(seq_no, guids, token):
@@ -161,12 +165,12 @@ def cancle_auth_person(seq_no, guids, token):
 if __name__ == '__main__':
     from multiprocessing.pool import ThreadPool
 
-    seq_list = ['5C04R080151']
+    seq_list = ['5C04R080066', '5C04R080068', '5C04R080024']
     pool = ThreadPool(len(seq_list))
     token = app_auth()
-    school_id = 'c42be09025eb851943bf77378b034d62'
+    school_id = '4c59e358765ca0828cc994b7b5992313'
     for seq in seq_list:
-        pool.apply_async(auths_persons, args=(seq, token, school_id, 20))
-        time.sleep(2)
+        pool.apply_async(auths_persons, args=(seq, token, school_id))
+        time.sleep(30)
     pool.close()
     pool.join()
